@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrar Usuário</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(120deg, #1e3c72, #2a5298);
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .register-container {
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(30,60,114,0.15);
+      min-width: 320px;
+    }
+    h2 {
+      margin-bottom: 1.5rem;
+      color: #1e3c72;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #2a5298;
+      font-weight: 700;
+    }
+    input[type="text"], input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 0.7rem;
+      margin-bottom: 1.2rem;
+      border: 1px solid #b0c4de;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border 0.2s;
+    }
+    input:focus {
+      border: 1.5px solid #1e3c72;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 0.8rem;
+      background: linear-gradient(90deg, #1e3c72, #2a5298);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: linear-gradient(90deg, #2a5298, #1e3c72);
+    }
+    .msg {
+      margin-top: 1rem;
+      text-align: center;
+      font-weight: 700;
+    }
+    .msg.error {
+      color: #c0392b;
+    }
+    .msg.success {
+      color: #27ae60;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-container">
+    <h2>Registrar Usuário</h2>
+    <form id="registerForm">
+      <label for="nome">Nome</label>
+      <input type="text" id="nome" name="nome" required>
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" required>
+      <button type="submit">Registrar</button>
+    </form>
+    <div id="msg" class="msg"></div>
+  </div>
+  <script>
+    const form = document.getElementById('registerForm');
+    const msg = document.getElementById('msg');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = '';
+      msg.className = 'msg';
+      const data = {
+        nome: form.nome.value,
+        email: form.email.value,
+        senha: form.senha.value
+      };
+      try {
+        const res = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (res.ok) {
+          msg.textContent = result.message;
+          msg.classList.add('success');
+          form.reset();
+          if (result.redirect) {
+            setTimeout(() => {
+              window.location.href = result.redirect;
+            }, 1000);
+          }
+        } else {
+          msg.textContent = result.error || 'Erro ao registrar.';
+          msg.classList.add('error');
+        }
+      } catch (err) {
+        msg.textContent = 'Erro de conexão.';
+        msg.classList.add('error');
+      }
+    });
+  </script>
+</body>
+</html> 

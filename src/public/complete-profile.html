@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Completar Perfil</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(120deg, #1e3c72, #2a5298);
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .profile-container {
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(30,60,114,0.15);
+      min-width: 320px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 1.5rem;
+      color: #1e3c72;
+    }
+    #camera-permission {
+      margin-top: 1.5rem;
+      color: #2a5298;
+      font-weight: 700;
+    }
+    video {
+      display: none;
+      margin-top: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(30,60,114,0.10);
+      max-width: 100%;
+    }
+    .msg {
+      margin-top: 1rem;
+      color: #c0392b;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-container">
+    <h2>Completar Perfil</h2>
+    <p id="camera-permission">Precisamos de permissão para acessar sua câmera e escanear seu rosto.</p>
+    <button id="requestCamera">Permitir Câmera</button>
+    <video id="video" autoplay></video>
+    <div id="msg" class="msg"></div>
+  </div>
+  <script>
+    const btn = document.getElementById('requestCamera');
+    const video = document.getElementById('video');
+    const msg = document.getElementById('msg');
+    btn.onclick = async () => {
+      msg.textContent = '';
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        btn.style.display = 'none';
+        document.getElementById('camera-permission').textContent = 'Câmera ativada! (simulação)';
+      } catch (err) {
+        msg.textContent = 'Permissão negada ou erro ao acessar a câmera.';
+      }
+    };
+  </script>
+</body>
+</html> 

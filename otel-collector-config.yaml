@@ -1,0 +1,37 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  coralogix:
+    domain: "cx498.coralogix.com"
+    private_key: "cxtp_0QD7T8Cy8u4fxqibMZrFdOESw9WGmB"
+    application_name: "ageri.equipe3.nodejsmain"
+    subsystem_name: "ageri.equipe3.nodejs"
+    timeout: 30s
+  debug:
+    verbosity: detailed
+
+# extensions:
+#   zpages:
+#     endpoint: 0.0.0.0:55679
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [coralogix]
+    metrics:
+      receivers: [otlp]
+      exporters: [coralogix]
+    logs:
+      receivers: [otlp]
+      exporters: [debug, coralogix]
+  # telemetry:
+  #   logs:
+  #     level: debug
+  # extensions: [zpages]
