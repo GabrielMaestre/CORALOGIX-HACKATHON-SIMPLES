@@ -45,6 +45,19 @@
       font-weight: 700;
     }
   </style>
+  <script src="./coralogix-browser-sdk.js"></script>
+  <script>
+    window.CoralogixRum.init({
+      application: 'ageri.equipe3.nodejsmainweb',
+      environment: 'production',
+      public_key: 'cxtp_csY6UQ1SnWJuGSm8vJmQDME2xyZbPq',
+      coralogixDomain: 'US2',
+      labels: {
+        custom_test: true,
+      },
+      ignoreErrors: [''],
+    });
+  </script>
 </head>
 <body>
   <div class="profile-container">
@@ -52,22 +65,93 @@
     <p id="camera-permission">Precisamos de permissão para acessar sua câmera e escanear seu rosto.</p>
     <button id="requestCamera">Permitir Câmera</button>
     <video id="video" autoplay></video>
+    <img id="resultImg" style="display:none;max-width:100%;margin-top:1rem;border-radius:8px;box-shadow:0 2px 8px rgba(30,60,114,0.10);"/>
+    <button id="continueBtn" style="display:block;margin-top:1.5rem;" disabled>Continuar</button>
     <div id="msg" class="msg"></div>
   </div>
   <script>
     const btn = document.getElementById('requestCamera');
     const video = document.getElementById('video');
     const msg = document.getElementById('msg');
+    const resultImg = document.getElementById('resultImg');
+    const continueBtn = document.getElementById('continueBtn');
+    let stream;
+    let intervalId;
     btn.onclick = async () => {
       msg.textContent = '';
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
         video.style.display = 'block';
         btn.style.display = 'none';
-        document.getElementById('camera-permission').textContent = 'Câmera ativada! (simulação)';
+        document.getElementById('camera-permission').textContent = 'Câmera ativada!';
+        intervalId = setInterval(captureAndSendFrame, 1000);
       } catch (err) {
         msg.textContent = 'Permissão negada ou erro ao acessar a câmera.';
+      }
+    };
+
+    async function captureAndSendFrame() {
+      msg.textContent = '';
+      resultImg.style.display = 'none';
+      if (video.videoWidth === 0 || video.videoHeight === 0) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append('file', blob, 'frame.jpg');
+        try {
+          const response = await fetch('http://localhost:8000/scan', {
+            method: 'POST',
+            body: formData
+          });
+
+          console.log(`[PY] >> ${response}`);
+
+          const data = await response.json();
+          if (data.recognized) {
+            msg.textContent = 'Rosto reconhecido!';
+            resultImg.src = 'data:image/jpeg;base64,' + data.image;
+            resultImg.style.display = 'block';
+            continueBtn.disabled = false;
+            clearInterval(intervalId);
+          } else {
+            msg.textContent = 'Nenhum rosto reconhecido.';
+            resultImg.style.display = 'none';
+            continueBtn.disabled = true;
+          }
+        } catch (err) {
+          msg.textContent = 'Erro ao enviar imagem para análise.';
+          continueBtn.disabled = true;
+        }
+      }, 'image/jpeg');
+    }
+
+    function getEmailFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('email');
+    }
+
+    continueBtn.onclick = async () => {
+      // Pega a imagem base64 do rosto
+      const faceImage = resultImg.src.split(',')[1];
+      try {
+        const response = await fetch('http://localhost:3001/game', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ faceImage })
+        });
+        if (response.ok) {
+          window.location.href = 'http://localhost:3001/game';
+        } else {
+          msg.textContent = 'Erro ao enviar imagem para o game.';
+        }
+      } catch (err) {
+        msg.textContent = 'Erro ao enviar imagem para o game.';
       }
     };
   </script>

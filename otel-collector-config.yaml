@@ -16,10 +16,6 @@ exporters:
   debug:
     verbosity: detailed
 
-# extensions:
-#   zpages:
-#     endpoint: 0.0.0.0:55679
-
 service:
   pipelines:
     traces:
@@ -31,7 +27,3 @@ service:
     logs:
       receivers: [otlp]
       exporters: [debug, coralogix]
-  # telemetry:
-  #   logs:
-  #     level: debug
-  # extensions: [zpages]

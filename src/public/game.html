@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bomberman Coralogix Hackathon - Time 3</title>
+  <style>
+    body {
+      background: linear-gradient(120deg, #1e3c72, #2a5298);
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .game-container {
+      background: #fff;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(255, 0, 0, 0.15);
+      min-width: 600px;
+      min-height: 600px;
+      text-align: center;
+    }
+    #gameCanvas {
+      background: #222;
+      display: block;
+      margin: 0 auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(30,60,114,0.10);
+    }
+    #msg {
+      margin-top: 1rem;
+      color: #1e3c72;
+    }
+    #startBtn {
+      margin-top: 1rem;
+      padding: 0.5rem 1.5rem;
+      font-size: 1.1rem;
+      background: #1e3c72;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: none;
+    }
+  </style>
+
+  <script src="./coralogix-browser-sdk.js"></script>
+  <script>
+    window.CoralogixRum.init({
+      application: 'ageri.equipe3.nodejsmainweb',
+      environment: 'production',
+      public_key: 'cxtp_csY6UQ1SnWJuGSm8vJmQDME2xyZbPq',
+      coralogixDomain: 'US2',
+      labels: {
+        custom_test: true,
+      },
+      ignoreErrors: [''],
+    });
+  </script>
+</head>
+<body>
+  <div class="game-container">
+    <h2>Bomberman Coralogix Hackathon - Time 3</h2>
+    <canvas id="gameCanvas" width="960" height="960"></canvas>
+    <div id="msg"></div>
+    <button id="startBtn">Iniciar Partida</button>
+  </div>
+  <script>
+    // --- UTILITÁRIOS DE PERFIL ---
+    let faceImgData = null;
+    let isAdminParam = window.isAdmin || false;
+
+    // --- JOGO MULTIPLAYER ---
+    const GRID_SIZE = 30;
+    const TILE_SIZE = 32;
+    const PLAYER_SIZE = 28;
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const msgDiv = document.getElementById('msg');
+    const startBtn = document.getElementById('startBtn');
+    let ws = null;
+    let myId = null;
+    let isAdmin = false;
+    let faceImgs = {}; // id -> Image
+    let lastGameState = null;
+
+    // Conectar ao WebSocket e iniciar lógica
+    function connectWS() {
+      ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
+      ws.onopen = () => {
+        ws.send(JSON.stringify({type: 'join', faceImage: faceImgData, isAdmin: isAdminParam}));
+      };
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'joined') {
+          myId = msg.id;
+          isAdmin = msg.isAdmin;
+          if (isAdmin) {
+            startBtn.style.display = 'inline-block';
+            startBtn.onclick = () => {
+              ws.send(JSON.stringify({type: 'start'}));
+              startBtn.disabled = true;
+            };
+            // Se for admin e a página foi recarregada, iniciar o jogo automaticamente
+            if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+              ws.send(JSON.stringify({type: 'start'}));
+              startBtn.disabled = true;
+            }
+          }
+        }
+        if (msg.type === 'gameState') {
+          renderGame(msg.state);
+        }
+      };
+      ws.onclose = () => {
+        msgDiv.textContent = 'Desconectado do servidor. Recarregue a página.';
+      };
+    }
+
+    // Renderizar o estado do jogo
+    function renderGame(state) {
+      lastGameState = state;
+      // Carregar imagens dos jogadores
+      state.players.forEach(p => {
+        if (p.faceImage && !faceImgs[p.id]) {
+          const img = new window.Image();
+          img.src = 'data:image/jpeg;base64,' + p.faceImage;
+          faceImgs[p.id] = img;
+        }
+      });
+      // Mensagem de status
+      if (!state.started) {
+        msgDiv.textContent = isAdmin ? 'Clique em Iniciar para começar.' : 'Aguardando o admin iniciar a partida...';
+        startBtn.style.display = isAdmin ? 'inline-block' : 'none';
+        startBtn.disabled = false;
+      } else {
+        msgDiv.textContent = '';
+        startBtn.style.display = 'none';
+      }
+      // Desenhar
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Grid
+      for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+          ctx.strokeStyle = '#444';
+          ctx.strokeRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+      }
+      // Blocos
+      state.blocks.forEach(b => {
+        ctx.fillStyle = b.indestrutivel ? '#555' : '#bfa';
+        ctx.fillRect(b.x*TILE_SIZE+2, b.y*TILE_SIZE+2, TILE_SIZE-4, TILE_SIZE-4);
+      });
+      // Bombas
+      state.bombs.forEach(b => {
+        ctx.fillStyle = '#222';
+        ctx.beginPath();
+        ctx.arc(b.x*TILE_SIZE+TILE_SIZE/2, b.y*TILE_SIZE+TILE_SIZE/2, TILE_SIZE/3, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+      });
+      // Explosões
+      state.explosions.forEach(e => {
+        ctx.fillStyle = 'rgba(255,200,0,0.7)';
+        ctx.fillRect(e.x*TILE_SIZE+4, e.y*TILE_SIZE+4, TILE_SIZE-8, TILE_SIZE-8);
+      });
+      // Jogadores
+      state.players.forEach(p => {
+        if (!p.alive) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(p.x*TILE_SIZE+TILE_SIZE/2, p.y*TILE_SIZE+TILE_SIZE/2, PLAYER_SIZE/2, 0, 2*Math.PI);
+        ctx.closePath();
+        ctx.clip();
+        if (faceImgs[p.id]) {
+          ctx.drawImage(faceImgs[p.id], p.x*TILE_SIZE+TILE_SIZE/2-PLAYER_SIZE/2, p.y*TILE_SIZE+TILE_SIZE/2-PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE);
+        }
+        ctx.restore();
+        ctx.strokeStyle = (p.id === myId) ? '#ff0000' : '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(p.x*TILE_SIZE+TILE_SIZE/2, p.y*TILE_SIZE+TILE_SIZE/2, PLAYER_SIZE/2, 0, 2*Math.PI);
+        ctx.stroke();
+      });
+      // Se perdeu
+      const me = state.players.find(p => p.id === myId);
+      if (me && !me.alive) {
+        msgDiv.textContent = 'Você perdeu! Aguarde o admin reiniciar.';
+      }
+    }
+
+    // Enviar comandos
+    document.addEventListener('keydown', (e) => {
+      if (!lastGameState || !lastGameState.started) return;
+      const me = lastGameState.players.find(p => p.id === myId);
+      if (!me || !me.alive) return;
+      let dx = 0, dy = 0;
+      if (e.key === 'ArrowUp' || e.key === 'w') dy = -1;
+      if (e.key === 'ArrowDown' || e.key === 's') dy = 1;
+      if (e.key === 'ArrowLeft' || e.key === 'a') dx = -1;
+      if (e.key === 'ArrowRight' || e.key === 'd') dx = 1;
+      if (dx !== 0 || dy !== 0) {
+        ws.send(JSON.stringify({type: 'move', dx, dy}));
+      }
+      if (e.key === ' ' || e.key === 'Spacebar') {
+        ws.send(JSON.stringify({type: 'bomb'}));
+      }
+    });
+
+    // Inicialização
+    connectWS();
+  </script>
+</body>
+</html> 

@@ -4,8 +4,21 @@
   <meta charset="UTF-8">
   <meta http-equiv="refresh" content="0; url=register.html" />
   <title>Redirecionando...</title>
+  <script src="./coralogix-browser-sdk.js"></script>
+  <script>
+    window.CoralogixRum.init({
+      application: 'ageri.equipe3.nodejsmainweb',
+      environment: 'production',
+      public_key: 'cxtp_csY6UQ1SnWJuGSm8vJmQDME2xyZbPq',
+      coralogixDomain: 'US2',
+      labels: {
+        custom_test: true,
+      },
+      ignoreErrors: [''],
+    });
+  </script>
 </head>
 <body>
-  <p>Redirecionando para <a href="register.html">registro</a>...</p>
+  <p>Redirecionando para <a href="/login">registro</a>...</p>
 </body>
 </html> 
