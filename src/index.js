@@ -4,9 +4,10 @@ const cookieParser = require('cookie-parser');
 const { sequelize } = require('./database');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
 
-require('./otel/otel-logs');
-const logger = require('./otel/logger');
+//require('./otel/otel-logs');
+const logger = require('./logger');
 
 const app = express();
 const port = 3000;
@@ -24,12 +25,14 @@ app.use(session({
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000, sameSite: 'lax' },
 }));
 
+app.set('trust proxy', true);
+
 app.use(cors({
-  origin: 'http://localhost:3001',
+  origin: '*',
   credentials: true
 }));
 
-app.use(express.static(__dirname + '/public'));
+app.use('/static', express.static(path.join(__dirname, 'public')));
 
 // Importação das rotas (exceto game)
 const authRoutes = require('./routes/auth');

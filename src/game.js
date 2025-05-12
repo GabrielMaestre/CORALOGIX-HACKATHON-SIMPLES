@@ -5,8 +5,8 @@ const http = require('http');
 const cors = require('cors');
 const path = require('path');
 
-require('./otel/otel-logs');
-const logger = require('./otel/logger');
+//require('./otel/otel-logs');
+const logger = require('./logger');
 
 const app = express();
 const port = 3001;
@@ -24,8 +24,10 @@ app.use(session({
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000, sameSite: 'lax' },
 }));
 
+app.set('trust proxy', true);
+
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'http://3.88.216.174:30800',
   credentials: true
 }));
 

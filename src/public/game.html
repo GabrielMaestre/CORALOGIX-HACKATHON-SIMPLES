@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
       height: 100vh;
       margin: 0;
     }
+
     .game-container {
       background: #fff;
       padding: 1rem 1.5rem;
@@ -23,17 +25,20 @@
       min-height: 600px;
       text-align: center;
     }
+
     #gameCanvas {
       background: #222;
       display: block;
       margin: 0 auto;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(30,60,114,0.10);
+      box-shadow: 0 2px 8px rgba(30, 60, 114, 0.10);
     }
+
     #msg {
       margin-top: 1rem;
       color: #1e3c72;
     }
+
     #startBtn {
       margin-top: 1rem;
       padding: 0.5rem 1.5rem;
@@ -47,20 +52,29 @@
     }
   </style>
 
-  <script src="./coralogix-browser-sdk.js"></script>
+  <script src="/static/coralogix-browser-sdk.js"></script>
   <script>
     window.CoralogixRum.init({
       application: 'ageri.equipe3.nodejsmainweb',
+      version: '1.0.0',
       environment: 'production',
       public_key: 'cxtp_csY6UQ1SnWJuGSm8vJmQDME2xyZbPq',
       coralogixDomain: 'US2',
       labels: {
         custom_test: true,
+        custom_isPlaying: true
       },
       ignoreErrors: [''],
+      traceParentInHeader: {
+      enabled: true,
+      options: {
+        allowedTracingUrls: [new RegExp('alpha'), new RegExp('.*')],
+      },
+    },
     });
   </script>
 </head>
+
 <body>
   <div class="game-container">
     <h2>Bomberman Coralogix Hackathon - Time 3</h2>
@@ -89,9 +103,9 @@
 
     // Conectar ao WebSocket e iniciar lógica
     function connectWS() {
-      ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
+      ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/game');
       ws.onopen = () => {
-        ws.send(JSON.stringify({type: 'join', faceImage: faceImgData, isAdmin: isAdminParam}));
+        ws.send(JSON.stringify({ type: 'join', faceImage: faceImgData, isAdmin: isAdminParam }));
       };
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
@@ -101,12 +115,12 @@
           if (isAdmin) {
             startBtn.style.display = 'inline-block';
             startBtn.onclick = () => {
-              ws.send(JSON.stringify({type: 'start'}));
+              ws.send(JSON.stringify({ type: 'start' }));
               startBtn.disabled = true;
             };
             // Se for admin e a página foi recarregada, iniciar o jogo automaticamente
             if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
-              ws.send(JSON.stringify({type: 'start'}));
+              ws.send(JSON.stringify({ type: 'start' }));
               startBtn.disabled = true;
             }
           }
@@ -146,19 +160,19 @@
       for (let y = 0; y < GRID_SIZE; y++) {
         for (let x = 0; x < GRID_SIZE; x++) {
           ctx.strokeStyle = '#444';
-          ctx.strokeRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
       }
       // Blocos
       state.blocks.forEach(b => {
         ctx.fillStyle = b.indestrutivel ? '#555' : '#bfa';
-        ctx.fillRect(b.x*TILE_SIZE+2, b.y*TILE_SIZE+2, TILE_SIZE-4, TILE_SIZE-4);
+        ctx.fillRect(b.x * TILE_SIZE + 2, b.y * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4);
       });
       // Bombas
       state.bombs.forEach(b => {
         ctx.fillStyle = '#222';
         ctx.beginPath();
-        ctx.arc(b.x*TILE_SIZE+TILE_SIZE/2, b.y*TILE_SIZE+TILE_SIZE/2, TILE_SIZE/3, 0, 2*Math.PI);
+        ctx.arc(b.x * TILE_SIZE + TILE_SIZE / 2, b.y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE / 3, 0, 2 * Math.PI);
         ctx.fill();
         ctx.strokeStyle = '#fff';
         ctx.stroke();
@@ -166,24 +180,24 @@
       // Explosões
       state.explosions.forEach(e => {
         ctx.fillStyle = 'rgba(255,200,0,0.7)';
-        ctx.fillRect(e.x*TILE_SIZE+4, e.y*TILE_SIZE+4, TILE_SIZE-8, TILE_SIZE-8);
+        ctx.fillRect(e.x * TILE_SIZE + 4, e.y * TILE_SIZE + 4, TILE_SIZE - 8, TILE_SIZE - 8);
       });
       // Jogadores
       state.players.forEach(p => {
         if (!p.alive) return;
         ctx.save();
         ctx.beginPath();
-        ctx.arc(p.x*TILE_SIZE+TILE_SIZE/2, p.y*TILE_SIZE+TILE_SIZE/2, PLAYER_SIZE/2, 0, 2*Math.PI);
+        ctx.arc(p.x * TILE_SIZE + TILE_SIZE / 2, p.y * TILE_SIZE + TILE_SIZE / 2, PLAYER_SIZE / 2, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.clip();
         if (faceImgs[p.id]) {
-          ctx.drawImage(faceImgs[p.id], p.x*TILE_SIZE+TILE_SIZE/2-PLAYER_SIZE/2, p.y*TILE_SIZE+TILE_SIZE/2-PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE);
+          ctx.drawImage(faceImgs[p.id], p.x * TILE_SIZE + TILE_SIZE / 2 - PLAYER_SIZE / 2, p.y * TILE_SIZE + TILE_SIZE / 2 - PLAYER_SIZE / 2, PLAYER_SIZE, PLAYER_SIZE);
         }
         ctx.restore();
         ctx.strokeStyle = (p.id === myId) ? '#ff0000' : '#ffffff';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(p.x*TILE_SIZE+TILE_SIZE/2, p.y*TILE_SIZE+TILE_SIZE/2, PLAYER_SIZE/2, 0, 2*Math.PI);
+        ctx.arc(p.x * TILE_SIZE + TILE_SIZE / 2, p.y * TILE_SIZE + TILE_SIZE / 2, PLAYER_SIZE / 2, 0, 2 * Math.PI);
         ctx.stroke();
       });
       // Se perdeu
@@ -204,10 +218,10 @@
       if (e.key === 'ArrowLeft' || e.key === 'a') dx = -1;
       if (e.key === 'ArrowRight' || e.key === 'd') dx = 1;
       if (dx !== 0 || dy !== 0) {
-        ws.send(JSON.stringify({type: 'move', dx, dy}));
+        ws.send(JSON.stringify({ type: 'move', dx, dy }));
       }
       if (e.key === ' ' || e.key === 'Spacebar') {
-        ws.send(JSON.stringify({type: 'bomb'}));
+        ws.send(JSON.stringify({ type: 'bomb' }));
       }
     });
 
@@ -215,4 +229,5 @@
     connectWS();
   </script>
 </body>
-</html> 
+
+</html>

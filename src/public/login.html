@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,25 +16,30 @@
       height: 100vh;
       margin: 0;
     }
+
     .login-container {
       background: #fff;
       padding: 2rem 2.5rem;
       border-radius: 12px;
-      box-shadow: 0 4px 24px rgba(30,60,114,0.15);
+      box-shadow: 0 4px 24px rgba(30, 60, 114, 0.15);
       min-width: 320px;
     }
+
     h2 {
       margin-bottom: 1.5rem;
       color: #1e3c72;
       text-align: center;
     }
+
     label {
       display: block;
       margin-bottom: 0.5rem;
       color: #2a5298;
       font-weight: 700;
     }
-    input[type="email"], input[type="password"] {
+
+    input[type="email"],
+    input[type="password"] {
       width: 100%;
       padding: 0.7rem;
       margin-bottom: 1.2rem;
@@ -42,10 +48,12 @@
       font-size: 1rem;
       transition: border 0.2s;
     }
+
     input:focus {
       border: 1.5px solid #1e3c72;
       outline: none;
     }
+
     button {
       width: 100%;
       padding: 0.8rem;
@@ -58,35 +66,47 @@
       cursor: pointer;
       transition: background 0.2s;
     }
+
     button:hover {
       background: linear-gradient(90deg, #2a5298, #1e3c72);
     }
+
     .msg {
       margin-top: 1rem;
       text-align: center;
       font-weight: 700;
     }
+
     .msg.error {
       color: #c0392b;
     }
+
     .msg.success {
       color: #27ae60;
     }
   </style>
-    <script src="./coralogix-browser-sdk.js"></script>
-    <script>
-      window.CoralogixRum.init({
-        application: 'ageri.equipe3.nodejsmainweb',
-        environment: 'production',
-        public_key: 'cxtp_csY6UQ1SnWJuGSm8vJmQDME2xyZbPq',
-        coralogixDomain: 'US2',
-        labels: {
-          custom_test: true,
-        },
-        ignoreErrors: [''],
-      });
-    </script>
+  <script src="/static/coralogix-browser-sdk.js"></script>
+  <script>
+    window.CoralogixRum.init({
+      application: 'ageri.equipe3.nodejsmainweb',
+      version: '1.0.0',
+      environment: 'production',
+      public_key: 'cxtp_csY6UQ1SnWJuGSm8vJmQDME2xyZbPq',
+      coralogixDomain: 'US2',
+      labels: {
+        custom_test: true,
+      },
+      ignoreErrors: [''],
+      traceParentInHeader: {
+      enabled: true,
+      options: {
+        allowedTracingUrls: [new RegExp('alpha'), new RegExp('.*')],
+      },
+    },
+    });
+  </script>
 </head>
+
 <body>
   <div class="login-container">
     <h2>Login</h2>
@@ -135,4 +155,5 @@
     });
   </script>
 </body>
-</html> 
+
+</html>
